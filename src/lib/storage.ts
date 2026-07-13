@@ -6,7 +6,7 @@ const REVIEWS_KEY = "cp_reviews";
 
 // Banned Words
 
-const BANNED_WORDS = ["کلمه", "بیشعور", "احمق"];
+const BANNED_WORDS = ["خنگ", "بیشعور", "احمق","stupid","pathetic"];
 
 function containsBannedWords(text: string): boolean {
   const lower = text.toLowerCase();

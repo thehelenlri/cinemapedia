@@ -33,7 +33,7 @@ export default function MovieCard({ movie, size = "md" }: Props) {
     <Link
       to={`/movie/${movie.id}`}
       className={cn(
-        "group relative block rounded-xl overflow-hidden bg-cinema-card border border-border hover:border-teal-500/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-teal-900/10 poster-shine",
+        "group relative block rounded-xl overflow-hidden bg-cinema-card border border-border hover:border-teal-500/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-teal-900/10 poster-shine cursor-grab",
         size === "sm" && "w-[140px] shrink-0",
         size === "md" && "w-[180px] shrink-0",
         size === "lg" && "w-full",

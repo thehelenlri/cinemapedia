@@ -45,15 +45,18 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-14">
+      <div
+        className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-14 
+"
+      >
         {/* Top Rated */}
         <Section
           title="برترین آثار"
           subtitle="بر اساس امتیاز IMDb"
-          icon={<Star className="w-5 h-5 text-teal-400 fill-teal-400" />}
+          icon={<Star className="w-5 h-5 text-teal-400 fill-teal-400 " />}
           linkTo="/search?sort=imdb"
         >
-          <div className="flex gap-4 overflow-x-auto pb-3">
+          <div className="flex gap-4 overflow-x-auto pb-3 ">
             {topRated.map((m) => (
               <MovieCard key={m.id} movie={m} size="md" />
             ))}

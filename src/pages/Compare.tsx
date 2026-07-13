@@ -285,7 +285,7 @@ export default function Compare() {
             ) : (
               <div className="p-6 text-center">
                 <p className="text-teal-400 font-bold">
-                  🤝 این دو اثر امتیاز مساوی دارند!
+                   این دو اثر امتیاز مساوی دارند!
                 </p>
               </div>
             );

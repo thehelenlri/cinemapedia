@@ -89,7 +89,7 @@ export default function HeroSlider({ movies }: Props) {
           </p>
 
           {/* Meta */}
-          <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4 mr-4 mb-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Star className="w-4 h-4 fill-teal-400 text-teal-400" />
               <span className="text-teal-400 font-bold ltr text-base">
