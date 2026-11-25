@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+﻿import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Search, Bookmark, GitCompare, Film, X, Menu } from "lucide-react";
 import { MOVIES } from "@/constants/movies";
@@ -13,6 +13,20 @@ export default function Navbar() {
   const [watchCount, setWatchCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const syncWatchlist = () => {
+      setWatchCount(getWatchlist().length);
+    };
+
+    window.addEventListener("cp:watchlist", syncWatchlist);
+    window.addEventListener("storage", syncWatchlist);
+
+    return () => {
+      window.removeEventListener("cp:watchlist", syncWatchlist);
+      window.removeEventListener("storage", syncWatchlist);
+    };
+  }, []);
 
   useEffect(() => {
     setWatchCount(getWatchlist().length);
@@ -196,3 +210,4 @@ export default function Navbar() {
     </nav>
   );
 }
+

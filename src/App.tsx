@@ -1,3 +1,5 @@
+﻿import "./CinemaEditorialPages.css";
+import CinemaRouteEffects from "@/components/CinemaRouteEffects";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import Navbar from "@/components/layout/Navbar";
@@ -12,6 +14,7 @@ import NotFound from "@/pages/NotFound";
 export default function App() {
   return (
     <BrowserRouter>
+      <CinemaRouteEffects />
       <div className="min-h-screen bg-cinema-dark flex flex-col">
         <Navbar />
         <main className="flex-1">
@@ -41,3 +44,4 @@ export default function App() {
     </BrowserRouter>
   );
 }
+

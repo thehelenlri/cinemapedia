@@ -1,92 +1,218 @@
-import { useState, useEffect } from "react";
-import { Bookmark, Trash2 } from "lucide-react";
-import { getWatchlist, toggleWatchlist } from "@/lib/storage";
-import { getMovieById } from "@/constants/movies";
-import { Movie } from "@/types";
-import MovieCard from "@/components/features/MovieCard";
+﻿import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Bookmark, Search, Trash2, ArrowUpLeft } from "lucide-react";
+import { MOVIES } from "@/constants/movies";
+import { toggleWatchlist } from "@/lib/storage";
+import {
+  EditorialHeader, EditorialPoster, useCollection
+} from "@/components/features/Editorial";
 import { toast } from "sonner";
 
 export default function Watchlist() {
-  const [movies, setMovies] = useState<Movie[]>([]);
 
-  const load = () => {
-    const ids = getWatchlist();
-    const list = ids.map((id) => getMovieById(id)).filter(Boolean) as Movie[];
-    setMovies(list);
-  };
+  const { ids, toggle } = useCollection();
 
-  useEffect(() => {
-    load();
-  }, []);
+  const [query,setQuery] = useState("");
+  const [type,setType] = useState("all");
+  const [sort,setSort] = useState("saved");
+  const [confirm,setConfirm] = useState(false);
 
-  const removeAll = () => {
-    movies.forEach((m) => toggleWatchlist(m.id));
-    setMovies([]);
-    toast.success("لیست پاک شد");
+  const movies = MOVIES
+    .filter(m => ids.includes(m.id))
+    .sort((a,b) => ids.indexOf(b.id)-ids.indexOf(a.id));
+
+  const results = movies.filter(m =>
+    (type === "all" || m.type === type) &&
+    (m.titleFa.includes(query) ||
+      m.titleEn.toLowerCase().includes(query.toLowerCase()))
+  ).sort((a,b) => {
+
+    if (sort === "rating") return b.imdb-a.imdb;
+    if (sort === "year") return b.year-a.year;
+
+    return 0;
+
+  });
+
+  const clear = () => {
+
+    try {
+      [...ids].forEach(id => toggleWatchlist(id));
+
+      window.dispatchEvent(new Event("cp:watchlist"));
+
+      setConfirm(false);
+
+      toast.success("مجموعه پاک شد");
+    } catch {
+      toast.error("پاک کردن مجموعه ممکن نیست");
+    }
+
   };
 
   return (
-    <div className="pt-24 max-w-7xl mx-auto px-4 sm:px-6 pb-16">
-      <div className="flex items-center justify-between mb-8">
+    <div className="ed-page">
+
+      <EditorialHeader
+        index="03"
+        english="MY PERSONAL COLLECTION"
+        title="لیست علاقه‌مندی"
+        description="مجموعه‌ای از داستان‌هایی که برای شما ارزش تماشا دارند."
+      />
+
+      <div className="ed-collection-summary">
+
+        <Bookmark size={40} strokeWidth={1}/>
+
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center">
-              <Bookmark className="w-5 h-5 text-teal-400" />
-            </div>
-            <h1 className="text-3xl font-black text-white">لیست علاقه‌مندی</h1>
-          </div>
-          <p className="text-muted-foreground text-sm mr-13">
-            {movies.length} اثر ذخیره شده
-          </p>
+          <strong>{movies.length}</strong>
+          <span>اثر ذخیره شده</span>
         </div>
-        {movies.length > 0 && (
-          <button
-            onClick={removeAll}
-            className="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-950/30 border border-red-900/40 rounded-lg transition-all"
-          >
-            <Trash2 className="w-4 h-4" />
-            پاک کردن همه
-          </button>
-        )}
+
+        <div>
+          <strong>{movies.filter(m=>m.type==="movie").length}</strong>
+          <span>فیلم سینمایی</span>
+        </div>
+
+        <div>
+          <strong>{movies.filter(m=>m.type==="series").length}</strong>
+          <span>سریال</span>
+        </div>
+
       </div>
 
-      {movies.length === 0 ? (
-        <div className="text-center py-24">
-          <div className="text-6xl mb-6">🎬</div>
-          <h2 className="text-xl font-bold text-white mb-2">
-            لیست شما خالی است
-          </h2>
-          <p className="text-muted-foreground text-sm mb-6">
-            روی آیکون بوکمارک در کارت‌های فیلم کلیک کنید تا به لیست اضافه شوند
-          </p>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-teal-500 hover:bg-teal-400 text-black font-bold rounded-xl text-sm transition-all"
-          >
-            مرور فیلم‌ها
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {movies.map((m) => (
-            <div key={m.id} className="relative group/wrap">
-              <MovieCard movie={m} size="lg" />
+      {movies.length ? (
+        <>
+
+          <div className="ed-library-tools">
+
+            <div className="ed-tabs">
+
+              {[
+                ["all","همه"],
+                ["movie","فیلم‌ها"],
+                ["series","سریال‌ها"]
+              ].map(([key,label])=>(
+                <button
+                  key={key}
+                  className={type===key?"active":""}
+                  onClick={()=>setType(key)}
+                >
+                  {label}
+                </button>
+              ))}
+
+            </div>
+
+            <div className="ed-mini-search">
+              <Search size={18}/>
+              <input
+                placeholder="جستجو در مجموعه..."
+                value={query}
+                aria-label="جستجوی مجموعه"
+                onChange={e=>setQuery(e.target.value)}
+              />
+            </div>
+
+            <select
+              value={sort}
+              aria-label="مرتب سازی"
+              onChange={e=>setSort(e.target.value)}
+            >
+              <option value="saved">آخرین ذخیره شده</option>
+              <option value="rating">بالاترین امتیاز</option>
+              <option value="year">سال انتشار</option>
+            </select>
+
+            <button
+              className="ed-delete"
+              onClick={()=>setConfirm(true)}
+            >
+              <Trash2 size={16}/>
+              پاک کردن همه
+            </button>
+
+          </div>
+
+          <div className="ed-results-toolbar">
+            {results.length} اثر
+          </div>
+
+          <div className="ed-grid">
+
+            {results.map(movie=>(
+              <EditorialPoster
+                key={movie.id}
+                movie={movie}
+                saved
+                onSave={()=>toggle(movie.id)}
+              />
+            ))}
+
+          </div>
+
+          {!results.length && (
+            <div className="ed-empty">
+              <Search size={35}/>
+              <h2>اثری با این مشخصات پیدا نشد</h2>
               <button
-                aria-label="watching"
-                onClick={() => {
-                  toggleWatchlist(m.id);
-                  load();
-                  toast(`«${m.titleFa}» از لیست حذف شد`, { icon: "🗑️" });
-                }}
-                className="absolute top-2 left-2 w-7 h-7 rounded-full bg-red-600/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover/wrap:opacity-100 transition-opacity hover:bg-red-600 z-10"
+                className="ed-outline"
+                onClick={()=>{setQuery("");setType("all");}}
               >
-                <Trash2 className="w-3 h-3 text-white" />
+                نمایش همه
               </button>
             </div>
-          ))}
+          )}
+
+        </>
+      ) : (
+        <div className="ed-empty ed-empty-library">
+
+          <Bookmark size={64} strokeWidth={.8}/>
+
+          <h2>مجموعه شما هنوز خالی است.</h2>
+
+          <p>از میان آثار سینماپدیا، فیلم بعدی خود را انتخاب کنید.</p>
+
+          <Link to="/search" className="ed-primary">
+            کشف فیلم و سریال
+            <ArrowUpLeft size={18}/>
+          </Link>
+
         </div>
       )}
+
+      {confirm && (
+        <div
+          className="ed-modal"
+          onClick={()=>setConfirm(false)}
+        >
+          <div
+            className="ed-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="تایید حذف مجموعه"
+            onClick={e=>e.stopPropagation()}
+          >
+
+            <h2>تمام آثار حذف شوند؟</h2>
+
+            <p>این کار لیست علاقه‌مندی شما را خالی می‌کند.</p>
+
+            <div>
+              <button className="ed-outline" onClick={()=>setConfirm(false)}>
+                انصراف
+              </button>
+
+              <button className="ed-delete" onClick={clear}>
+                حذف همه
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

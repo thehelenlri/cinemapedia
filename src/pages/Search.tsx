@@ -1,256 +1,225 @@
-import { useState, useEffect, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Search as SearchIcon, SlidersHorizontal, X } from "lucide-react";
+﻿import { useSearchParams } from "react-router-dom";
+import { Search as SearchIcon, X, SlidersHorizontal } from "lucide-react";
 import { MOVIES, GENRES } from "@/constants/movies";
-import MovieCard from "@/components/features/MovieCard";
-import { Movie } from "@/types";
+import {
+  EditorialHeader, EditorialPoster, useCollection
+} from "@/components/features/Editorial";
 
 export default function Search() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [query, setQuery] = useState(searchParams.get("q") || "");
-  const [genre, setGenre] = useState(searchParams.get("genre") || "");
-  const [type, setType] = useState<"" | "movie" | "series">(
-    (searchParams.get("type") as "" | "movie" | "series") || "",
+
+  const [params, setParams] = useSearchParams();
+  const { ids, toggle } = useCollection();
+
+  const query = params.get("q") || "";
+  const genre = params.get("genre") || "";
+  const type = params.get("type") || "";
+  const year = params.get("year") || "";
+  const sort = params.get("sort") || "imdb";
+  const minRating = Math.max(
+    0, Math.min(10, Number(params.get("rating")) || 0)
   );
-  const [minRating, setMinRating] = useState(0);
-  const [year, setYear] = useState("");
-  const [sort, setSort] = useState(searchParams.get("sort") || "imdb");
-  const [showFilters, setShowFilters] = useState(false);
 
-  const years = useMemo(() => {
-    const ys = [...new Set(MOVIES.map((m) => m.year))].sort((a, b) => b - a);
-    return ys;
-  }, []);
+  const years = [...new Set(MOVIES.map(m => m.year))]
+    .sort((a,b) => b-a);
 
-  useEffect(() => {
-    const params: Record<string, string> = {};
-    if (query) params.q = query;
-    if (genre) params.genre = genre;
-    if (type) params.type = type;
-    if (sort) params.sort = sort;
-    setSearchParams(params, { replace: true });
-  }, [query, genre, type, sort]);
+  const update = (key: string, value: string) => {
+    const next = new URLSearchParams(params);
 
-  const results = useMemo(() => {
-    let list = [...MOVIES];
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      list = list.filter(
-        (m) =>
-          m.titleFa.includes(query) ||
-          m.titleEn.toLowerCase().includes(q) ||
-          m.genres.some((g) => g.includes(query)),
-      );
-    }
-    if (genre) list = list.filter((m) => m.genres.includes(genre));
-    if (type) list = list.filter((m) => m.type === type);
-    if (minRating > 0) list = list.filter((m) => m.imdb >= minRating);
-    if (year) list = list.filter((m) => m.year === parseInt(year));
+    if (value) next.set(key, value);
+    else next.delete(key);
 
-    if (sort === "imdb") list.sort((a, b) => b.imdb - a.imdb);
-    else if (sort === "year") list.sort((a, b) => b.year - a.year);
-    else if (sort === "rt")
-      list.sort((a, b) => b.rottenTomatoes - a.rottenTomatoes);
-
-    return list;
-  }, [query, genre, type, minRating, year, sort]);
-
-  const clearFilters = () => {
-    setQuery("");
-    setGenre("");
-    setType("");
-    setMinRating(0);
-    setYear("");
-    setSort("imdb");
+    setParams(next, { replace: true });
   };
 
-  const hasFilters = query || genre || type || minRating > 0 || year;
+  const results = MOVIES.filter(m => {
+
+    const q = query.trim().toLowerCase();
+
+    return (
+      (!q ||
+        m.titleFa.includes(q) ||
+        m.titleEn.toLowerCase().includes(q) ||
+        m.genres.some(g => g.includes(q))
+      ) &&
+      (!genre || m.genres.includes(genre)) &&
+      (!type || m.type === type) &&
+      (!year || m.year === Number(year)) &&
+      m.imdb >= minRating
+    );
+
+  }).sort((a,b) => {
+
+    if (sort === "year") return b.year-a.year;
+    if (sort === "rt") return b.rottenTomatoes-a.rottenTomatoes;
+    if (sort === "mc") return b.metacritic-a.metacritic;
+    if (sort === "title") return a.titleFa.localeCompare(b.titleFa,"fa");
+
+    return b.imdb-a.imdb;
+
+  });
 
   return (
-    <div className="pt-24 max-w-7xl mx-auto px-4 sm:px-6 pb-16">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-white mb-2">جستجوی پیشرفته</h1>
-        <p className="text-muted-foreground text-sm">
-          {results.length} اثر یافت شد
-        </p>
-      </div>
+    <div className="ed-page">
 
-      {/* Search + Filter Bar */}
-      <div className="flex gap-3 mb-6">
-        <div className="relative flex-1">
-          <SearchIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="نام فیلم یا سریال..."
-            className="w-full bg-cinema-card border border-border rounded-xl py-3 pr-10 pl-4 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:border-teal-500/50 transition-colors"
-          />
-          {query && (
-            <button
-              aria-label="search for movie"
-              onClick={() => setQuery("")}
-              className="absolute left-3 top-1/2 -translate-y-1/2"
-            >
-              <X className="w-4 h-4 text-muted-foreground hover:text-white" />
-            </button>
-          )}
-        </div>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
-            showFilters
-              ? "bg-teal-500 border-teal-400 text-black"
-              : "bg-cinema-card border-border text-muted-foreground hover:text-white"
-          }`}
-        >
-          <SlidersHorizontal className="w-4 h-4" />
-          فیلترها
-        </button>
-        {hasFilters && (
+      <EditorialHeader
+        index="01"
+        english="THE CINEMA ARCHIVE"
+        title="جستجوی پیشرفته"
+        description="داستان بعدی خود را در میان فیلم‌ها و سریال‌ها پیدا کنید."
+      />
+
+      <div className="ed-search-large">
+
+        <SearchIcon size={26} strokeWidth={1.5}/>
+
+        <input
+          value={query}
+          onChange={e => update("q",e.target.value)}
+          placeholder="نام فیلم، سریال یا ژانر..."
+          aria-label="جستجوی فیلم و سریال"
+        />
+
+        {query && (
           <button
-            onClick={clearFilters}
-            className="px-4 py-3 rounded-xl border border-border text-sm text-red-400 hover:bg-red-950/30 transition-all"
+            onClick={() => update("q","")}
+            aria-label="پاک کردن جستجو"
           >
-            پاک کردن
+            <X size={21}/>
           </button>
         )}
+
       </div>
 
-      {/* Filters Panel */}
-      {showFilters && (
-        <div className="bg-cinema-card border border-border rounded-2xl p-5 mb-6 grid grid-cols-2 sm:grid-cols-4 gap-4 animate-slide-up">
-          {/* Genre */}
-          <div>
-            <label className="text-xs text-muted-foreground block mb-2">
-              ژانر
-            </label>
-            <select
-              aria-label="genre "
-              value={genre}
-              onChange={(e) => setGenre(e.target.value)}
-              className="w-full bg-cinema-surface border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
-            >
-              <option value="">همه ژانرها</option>
-              {GENRES.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
+      <div className="ed-search-layout">
+
+        <aside className="ed-filters">
+
+          <div className="ed-filter-heading">
+            <SlidersHorizontal size={19}/>
+            <h2>فیلتر آثار</h2>
           </div>
-          {/* Type */}
-          <div>
-            <label className="text-xs text-muted-foreground block mb-2">
-              نوع
-            </label>
+
+          <label>
+            نوع اثر
             <select
-              aria-label="type"
               value={type}
-              onChange={(e) =>
-                setType(e.target.value as "" | "movie" | "series")
-              }
-              className="w-full bg-cinema-surface border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+              onChange={e => update("type",e.target.value)}
             >
-              <option value="">همه</option>
-              <option value="movie">فیلم</option>
+              <option value="">همه آثار</option>
+              <option value="movie">فیلم سینمایی</option>
               <option value="series">سریال</option>
             </select>
-          </div>
-          {/* Year */}
-          <div>
-            <label className="text-xs text-muted-foreground block mb-2">
-              سال
-            </label>
+          </label>
+
+          <label>
+            سال انتشار
             <select
-              aria-label="years to choose"
               value={year}
-              onChange={(e) => setYear(e.target.value)}
-              className="w-full bg-cinema-surface border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+              onChange={e => update("year",e.target.value)}
             >
-              <option value="">همه سال‌ها</option>
-              {years.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
+              <option value="">تمام سال‌ها</option>
+              {years.map(y => <option key={y}>{y}</option>)}
             </select>
+          </label>
+
+          <label>
+            حداقل امتیاز IMDb
+            <strong className="ed-range-value">
+              {minRating.toFixed(1)} / 10
+            </strong>
+
+            <input
+              type="range"
+              min="0"
+              max="10"
+              step=".5"
+              value={minRating}
+              onChange={e => update("rating",e.target.value)}
+            />
+          </label>
+
+          <div className="ed-filter-genres">
+
+            <h3>ژانر</h3>
+
+            {["",...GENRES].map(g => (
+              <button
+                key={g}
+                className={genre === g ? "active" : ""}
+                onClick={() => update("genre",g)}
+                aria-pressed={genre === g}
+              >
+                <span>{g || "همه ژانرها"}</span>
+                <span>
+                  {g
+                    ? MOVIES.filter(m => m.genres.includes(g)).length
+                    : MOVIES.length}
+                </span>
+              </button>
+            ))}
+
           </div>
-          {/* Sort */}
-          <div>
-            <label className="text-xs text-muted-foreground block mb-2">
-              مرتب‌سازی
-            </label>
+
+          <button
+            className="ed-outline"
+            onClick={() => setParams({}, {replace:true})}
+          >
+            بازنشانی فیلترها
+          </button>
+
+        </aside>
+
+        <section className="ed-search-results">
+
+          <div className="ed-results-toolbar">
+
+            <span>
+              <strong>{results.length}</strong> اثر یافت شد
+            </span>
+
             <select
-              aria-label="organize"
               value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="w-full bg-cinema-surface border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none"
+              aria-label="مرتب سازی"
+              onChange={e => update("sort",e.target.value)}
             >
               <option value="imdb">امتیاز IMDb</option>
-              <option value="year">جدیدترین</option>
+              <option value="year">جدیدترین آثار</option>
               <option value="rt">Rotten Tomatoes</option>
+              <option value="mc">Metacritic</option>
+              <option value="title">نام اثر</option>
             </select>
-          </div>
-          {/* Min Rating Slider */}
-          <div className="col-span-2 sm:col-span-4">
-            <label className="text-xs text-muted-foreground block mb-2">
-              حداقل امتیاز IMDb:{" "}
-              <span className="text-teal-400 font-bold">
-                {minRating > 0 ? minRating : "همه"}
-              </span>
-            </label>
-            <input
-              aria-label="IMDB"
-              type="range"
-              min={0}
-              max={9}
-              step={0.5}
-              value={minRating}
-              onChange={(e) => setMinRating(parseFloat(e.target.value))}
-              className="w-full accent-teal-500"
-            />
-          </div>
-        </div>
-      )}
 
-      {/* Genre Quick Filter */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <button
-          onClick={() => setGenre("")}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${!genre ? "bg-teal-500 text-black" : "bg-cinema-card border border-border text-muted-foreground hover:text-white"}`}
-        >
-          همه
-        </button>
-        {GENRES.slice(0, 8).map((g) => (
-          <button
-            key={g}
-            onClick={() => setGenre(g === genre ? "" : g)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${g === genre ? "bg-teal-500 text-black" : "bg-cinema-card border border-border text-muted-foreground hover:text-white"}`}
-          >
-            {g}
-          </button>
-        ))}
+          </div>
+
+          <div className="ed-grid ed-search-grid">
+            {results.map(movie => (
+              <EditorialPoster
+                key={movie.id}
+                movie={movie}
+                saved={ids.includes(movie.id)}
+                onSave={() => toggle(movie.id)}
+              />
+            ))}
+          </div>
+
+          {!results.length && (
+            <div className="ed-empty">
+              <SearchIcon size={42} strokeWidth={1}/>
+              <h2>اثری پیدا نشد</h2>
+              <p>عبارت جستجو یا فیلترها را تغییر دهید.</p>
+              <button
+                className="ed-primary"
+                onClick={() => setParams({})}
+              >
+                نمایش همه آثار
+              </button>
+            </div>
+          )}
+
+        </section>
+
       </div>
 
-      {/* Results */}
-      {results.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="text-5xl mb-4">🎬</div>
-          <p className="text-muted-foreground text-lg">نتیجه‌ای یافت نشد</p>
-          <button
-            onClick={clearFilters}
-            className="mt-4 text-teal-400 hover:text-teal-300 text-sm transition-colors"
-          >
-            پاک کردن فیلترها
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {results.map((m) => (
-            <MovieCard key={m.id} movie={m} size="lg" />
-          ))}
-        </div>
-      )}
     </div>
   );
 }

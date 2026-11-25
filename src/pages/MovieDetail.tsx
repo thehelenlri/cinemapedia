@@ -1,3 +1,4 @@
+﻿import { ThemeButton } from "@/components/features/Editorial";
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
@@ -51,7 +52,7 @@ export default function MovieDetail() {
     setSaved(isInWatchlist(movie.id));
     setUserRatingState(getUserRating(movie.id));
     setReviews(getReviews(movie.id));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setActiveTab("info"); setTrailerOpen(false);
   }, [movie]);
 
   const refreshReviews = useCallback(() => {
@@ -107,72 +108,90 @@ export default function MovieDetail() {
   };
 
   return (
-    <div className="pt-16">
-      {/* Backdrop Hero */}
-      <div className="relative h-[400px] sm:h-[520px]">
-        <img
-          src={movie.backdrop}
-          alt=""
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-cinema-dark via-cinema-dark/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-cinema-dark via-transparent to-cinema-dark/20" />
+    <div className="ed-detail-root">
 
-        <div className="absolute inset-0 flex items-end">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full pb-8">
-            <div className="flex gap-6 items-end">
-              {/* Poster */}
-              <div className="hidden sm:block shrink-0 w-36 h-52 rounded-xl overflow-hidden border-2 border-white/10 shadow-2xl">
-                <img
-                  src={movie.poster}
-                  alt={movie.titleEn}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <span
-                    className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusColor[movie.status]}`}
-                  >
-                    {statusLabel[movie.status]}
-                  </span>
-                  <span className="text-xs px-2 py-1 rounded border border-border text-muted-foreground">
-                    {movie.ageRating}
-                  </span>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    {movie.type === "series" ? (
-                      <Tv className="w-3 h-3" />
-                    ) : (
-                      <Film className="w-3 h-3" />
-                    )}
-                    {movie.type === "series" ? "سریال" : "فیلم"}
-                  </span>
-                </div>
-                <h1 className="text-3xl sm:text-4xl font-black text-white leading-tight">
-                  {movie.titleFa}
-                </h1>
-                <p className="text-base text-muted-foreground ltr mt-1 mb-4">
-                  {movie.titleEn} ({movie.year})
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {movie.genres.map((g) => (
-                    <span
-                      key={g}
-                      className="text-xs px-3 py-1 rounded-full bg-white/10 text-white border border-white/10"
-                    >
-                      {g}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+      <div className="ed-detail-container">
+
+        <div className="ed-masthead">
+
+          <Link to="/search">
+            <ArrowRight size={17}/>
+            بازگشت به آرشیو
+          </Link>
+
+          <span dir="ltr">THE FILM JOURNAL / 04</span>
+
+          <ThemeButton/>
+
         </div>
+
+        <div className="ed-detail-backdrop">
+
+          <img src={movie.backdrop} alt={movie.titleEn}/>
+
+          <div className="ed-detail-backdrop-label">
+            CINEMAPEDIA / FILM PROFILE
+          </div>
+
+        </div>
+
+        <section className="ed-detail-identity">
+
+          <div className="ed-detail-poster">
+            <img src={movie.poster} alt={movie.titleEn}/>
+          </div>
+
+          <div className="ed-detail-title">
+
+            <div className="ed-detail-tags">
+
+              <span>{statusLabel[movie.status]}</span>
+
+              <span>{movie.type === "series" ? "سریال" : "فیلم"}</span>
+
+              <span>{movie.year}</span>
+
+              <span>{movie.ageRating}</span>
+
+            </div>
+
+            <h1 dir="ltr">{movie.titleEn}</h1>
+
+            <h2>{movie.titleFa}</h2>
+
+            <div className="ed-detail-genres">
+
+              {movie.genres.map(g=>(
+                <Link
+                  key={g}
+                  to={`/search?genre=${encodeURIComponent(g)}`}
+                >
+                  {g}
+                </Link>
+              ))}
+
+            </div>
+
+            <p>{movie.synopsis}</p>
+
+            <div className="ed-detail-rating">
+
+              <Star size={20} fill="currentColor"/>
+
+              <strong>{movie.imdb.toFixed(1)}</strong>
+
+              <span>IMDb / 10</span>
+
+            </div>
+
+          </div>
+
+        </section>
+
       </div>
 
       {/* Action Bar */}
-      <div className="bg-cinema-card border-b border-border sticky top-16 z-30">
+      <div className="ed-detail-action bg-cinema-card border-b border-border sticky top-16 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3 flex-wrap">
           <button
             onClick={() => setTrailerOpen(true)}
@@ -235,7 +254,7 @@ export default function MovieDetail() {
       )}
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <div className="ed-detail-content max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-8">
@@ -407,7 +426,7 @@ export default function MovieDetail() {
           {/* Right Column - Sidebar */}
           <div className="space-y-6">
             {/* Poster (mobile hidden, visible on lg) */}
-            <div className="hidden lg:block">
+            <div className="hidden">
               <img
                 src={movie.poster}
                 alt={movie.titleEn}
@@ -515,3 +534,4 @@ export default function MovieDetail() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import { UserReview } from "@/types";
+﻿import { UserReview } from "@/types";
 
 const WATCHLIST_KEY = "cp_watchlist";
 const RATINGS_KEY = "cp_ratings";
@@ -46,6 +46,7 @@ export function toggleWatchlist(id: string): boolean {
     : [...list, id];
 
   localStorage.setItem(WATCHLIST_KEY, JSON.stringify(updated));
+  window.dispatchEvent(new Event("cp:watchlist"));
 
   return !exists;
 }
